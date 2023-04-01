@@ -2861,6 +2861,7 @@ input, select, textarea {
 	input[type="reset"],
 	input[type="button"],
 	input[type="file"],
+	input[type="date"],
 	button,
 	.button {
 		-moz-appearance: none;
@@ -2927,6 +2928,7 @@ input, select, textarea {
 		input[type="reset"]:hover,
 		input[type="button"]:hover,
 		input[type="file"]:hover,
+		input[type="date"]:hover,
 		input[type="file"]::file-selector-button:hover,
 		button:hover,
 		.button:hover {
@@ -2937,6 +2939,7 @@ input, select, textarea {
 		input[type="reset"]:active,
 		input[type="button"]:active,
 		input[type="file"]:active,
+		input[type="date"]:active,
 		input[type="file"]::file-selector-button:active,
 		button:active,
 		.button:active {
@@ -2946,6 +2949,7 @@ input, select, textarea {
 		input[type="submit"].icon:before,
 		input[type="reset"].icon:before,
 		input[type="button"].icon:before,
+		input[type="date"].icon:before,
 		input[type="file"].iconbefore,
 		button.icon:before,
 		.button.icon:before {
@@ -2956,6 +2960,7 @@ input, select, textarea {
 		input[type="submit"].primary,
 		input[type="reset"].primary,
 		input[type="button"].primary,
+		input[type="date"].primary,
 		input[type="file"].primary,
 		button.primary,
 		.button.primary {
@@ -2966,6 +2971,7 @@ input, select, textarea {
 			input[type="submit"].primary:hover,
 			input[type="reset"].primary:hover,
 			input[type="button"].primary:hover,
+			input[type="date"].primary:hover,
 			input[type="file"].primary:hover,
 			button.primary:hover,
 			.button.primary:hover {
@@ -2975,6 +2981,7 @@ input, select, textarea {
 			input[type="submit"].primary:active,
 			input[type="reset"].primary:active,
 			input[type="button"].primary:active,
+			input[type="date"].primary:active,
 			input[type="file"].primary:active,
 			button.primary:active,
 			.button.primary:active {
@@ -2984,6 +2991,7 @@ input, select, textarea {
 			input[type="submit"].primary.icon:before,
 			input[type="reset"].primary.icon:before,
 			input[type="button"].primary.icon:before,
+			input[type="date"].primary.icon:before,
 			input[type="file"].primary.icon:before,
 			button.primary.icon:before,
 			.button.primary.icon:before {
@@ -2993,6 +3001,7 @@ input, select, textarea {
 		input[type="submit"].fit,
 		input[type="reset"].fit,
 		input[type="button"].fit,
+		input[type="date"].fit,
 		input[type="file"].fit,
 		button.fit,
 		.button.fit {
@@ -3002,6 +3011,7 @@ input, select, textarea {
 		input[type="submit"].small,
 		input[type="reset"].small,
 		input[type="button"].small,
+		input[type="date"].small,
 		input[type="file"].small,
 		button.small,
 		.button.small {
@@ -3011,6 +3021,7 @@ input, select, textarea {
 		input[type="submit"].large,
 		input[type="reset"].large,
 		input[type="button"].large,
+		input[type="date"].large,
 		input[type="file"].large,
 		button.large,
 		.button.large {
@@ -3023,6 +3034,8 @@ input, select, textarea {
 		input[type="reset"]:disabled,
 		input[type="button"].disabled,
 		input[type="button"]:disabled,
+		input[type="date"].disabled,
+		input[type="date"]:disabled,
 		input[type="file"].disabled,
 		input[type="file"]:disabled,
 		button.disabled,
@@ -3037,6 +3050,7 @@ input, select, textarea {
 			input[type="submit"],
 			input[type="reset"],
 			input[type="button"],
+			input[type="date"],
 			input[type="file"],
 			button,
 			.button {

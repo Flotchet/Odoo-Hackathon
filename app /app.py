@@ -298,7 +298,8 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-		<li><a href="{url_for('admin')}">admin panel</a></li>
+		<li><a href="{url_for('admin')}">Admin panel</a></li>
+        <li><a href="{url_for('add_match')}">Match panel</a></li>
         <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
@@ -307,12 +308,54 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-		<li><a href="{url_for('admin')}">admin panel</a></li>
+		<li><a href="{url_for('admin')}">Admin panel</a></li>
+        <li><a href="{url_for('add_match')}">Match panel</a></li>
         <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
 
     return "Error attribution level"
+################################################################################################
+
+#########################################################@#########################Matches table
+def get_table_limited_matches() -> str:
+    """make an html table from the data of a company"""
+
+    match_db = Match()
+    matches = match_db.get_all()
+    #sort them by invert date
+    matches.sort(key=lambda x: x[1], reverse=True)
+
+    #make the table
+    table = """
+    <table class="alt">
+    <tr>
+        <th>ID</th>
+        <th>Date</th>
+        <th>Local</th>
+        <th>Visitor</th>
+        <th>Stadium</th>
+    </tr>
+    """
+    for enumarate, row in enumerate(matches):
+        if enumarate == 100:
+            break
+        table+=f"""
+        <tr>
+        """
+        for col in row:
+            table += f"""
+            <td>{col}</td>
+            """
+        table += """
+        </tr>
+        """
+
+    table += """
+    </table>
+    """
+
+    return table
 ################################################################################################
 
 ############################################################################home pages functions
@@ -356,6 +399,7 @@ def buttons(level : int, username : str) -> str:
 
         <ul class="actions fit">
             <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+            <li><a href="{url_for('add_match')}" class="button fit icon solid fa-user-friends">Matches Panel</a></li>
 		</ul>  
 
         <ul class="actions fit">
@@ -375,6 +419,7 @@ def buttons(level : int, username : str) -> str:
 
         <ul class="actions fit">
             <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+            <li><a href="{url_for('add_match')}" class="button fit icon solid fa-user-friends">Matches Panel</a></li>
 		</ul>  
         
         <ul class="actions fit">
@@ -816,6 +861,35 @@ def login():
                             Connected = username, 
                             menu = Markup(menu(connected)),
                             wrong = "")
+################################################################################################
+
+######################################################################################Admin page
+@app.route('/add_match', methods = ['GET', 'POST'])
+def add_match():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 3:
+         return home()
+    
+    if request.method == 'POST':
+
+        
+        return render_template('add_match.html', 
+                               table = Markup(get_table_limited_matches()), 
+                               Connected = username, 
+                               menu = Markup(menu(connected)))
+
+
+
+    return render_template('add_match.html',
+                            table = Markup(get_table_limited_matches()),
+                            Connected = username, 
+                            menu = Markup(menu(connected)))
 ################################################################################################
 
 ####################################################################################Sign up page
