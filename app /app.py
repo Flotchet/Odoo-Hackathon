@@ -1,7 +1,7 @@
 #########################################################################################imports
 #                                           Imports                                            #
 ################################################################################################
-from flask import Flask, render_template, request, Markup, url_for, session
+from flask import Flask, render_template, request, Markup, url_for, session, Response, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 from waitress import serve
@@ -13,6 +13,11 @@ import os
 import pandas
 import secrets
 import hashlib
+import time
+import cv2
+from itertools import cycle
+import psycopg2
+from psycopg2.extras import DictCursor, DictRow
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
@@ -22,6 +27,151 @@ import hashlib
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################################################classes
+#                                          Classes                                            #
+################################################################################################
+class TableManipulation():
+    def __init__(self, host : str, port : str, database : str, user : str, password : str ) -> None:
+        try:
+            self.con = psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
+            self.cursor = self.con.cursor(cursor_factory=DictCursor)
+        except Exception as e:
+            print(e)
+            
+    def close(self) -> None:
+        try:
+            if self.con:
+                self.cursor.close()
+                self.con.close()
+        except Exception as e:
+            print(e)
+################################################################################################    
+class Capsule(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM capsule;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM capsule WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, image_hash : str, match_id : int, owner_id : int, opened : bool = False) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO capsule (id, image_hash, match_id, owner_id, opened) VALUES (%s,%s,%s,%s,%s)''', [id, image_hash, match_id, owner_id, opened])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+################################################################################################            
+class Owner(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM owners;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM owners WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_owner_mail(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f"""SELECT mail FROM owners WHERE id = {id}""")
+            mail = self.cursor.fetchone()
+            return mail
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_owner_name(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f"""SELECT name FROM owners WHERE id = {id}""")
+            name = self.cursor.fetchone()
+            return name
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, name : str, mail : str) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO owners (id, name, mail) VALUES (%s,%s,%s)''', [id, name, mail])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+################################################################################################
+class Match(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM match;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM match WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, local_team : str, visitor_team : str, stadium : str, date : datetime = datetime.datetime.today()) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO match (id, date, local_team, visitor_team, stadium) VALUES (%s,%s,%s,%s,%s)''', [id, date, local_team,visitor_team, stadium])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+#########################################################################################classes
+#                                          Classes                                            #
+################################################################################################
 
 
 
@@ -72,7 +222,7 @@ app.config['SQLALCHEMY_BINDS'] = {
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'csv'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', }
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
@@ -139,6 +289,7 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -147,6 +298,7 @@ def menu(level : int) -> str :
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
 		<li><a href="{url_for('admin')}">admin panel</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -155,6 +307,7 @@ def menu(level : int) -> str :
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
 		<li><a href="{url_for('admin')}">admin panel</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
 
@@ -184,9 +337,9 @@ def buttons(level : int, username : str) -> str:
 
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
-
-
+ 
 		<ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
 			<li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
 		</ul>       
         </section>
@@ -200,6 +353,9 @@ def buttons(level : int, username : str) -> str:
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
 
+        <ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+		</ul>  
 
         <ul class="actions fit">
 			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
@@ -216,6 +372,10 @@ def buttons(level : int, username : str) -> str:
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
 
+        <ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+		</ul>  
+        
         <ul class="actions fit">
 			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
             <li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
@@ -271,6 +431,95 @@ def loginf(username : str, password : str) -> bool:
         return False
     
     return result[0][2]
+################################################################################################
+
+########################################################################Camera detector function
+def cameras_detector() -> list[int] :
+
+    """Detects the number of cameras connected to the computer and their ids"""
+    # This is a generator that yields the number of cameras connected to the 
+    # computer and returns their ids
+
+    devices = os.listdir("/dev")
+    cameras_indices = [int(device[-1]) for device in devices 
+                      if (device.startswith("video") 
+                          and not(int(device[-1]) % 2))]
+
+    cameras_indices.sort()
+
+    return cameras_indices
+###############################################################################################
+
+##########################################################################Face detector function
+def face_detection_in_frame(frame : any) -> any:
+
+    """Detects faces in a frame"""
+    # This function detects faces in a frame
+
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 
+                                         "haarcascade_frontalface_default.xml")
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+    return faces
+################################################################################################
+
+##########################################################################Face detector function
+def generate_frames(flag : bool = False) -> any or None:
+    cams = cameras_detector()
+    camera = cv2.VideoCapture(cams[0])
+    store = os.path.join(basedir, 'images')
+    for _ in cycle([True]):
+        ## read the camera frame
+        success,frame=camera.read()
+        if not success:
+            break
+        else:
+            faces = face_detection_in_frame(frame)
+
+            if len(faces) == 0:
+                font = cv2.FONT_HERSHEY_DUPLEX
+                color = (0, 0, 255) 
+                fontsize = 2/3
+                text = "No face detected"
+                position = (25, 50)
+
+                cv2.putText(frame, text, position, font, fontsize, color=color)
+
+            for (x, y, w, h) in faces:
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+            font = cv2.FONT_HERSHEY_DUPLEX
+            color = (255, 255, 255) 
+            fontsize = 2/3
+            time = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            text = f"whatfeur vs world - {time}"
+            position = (25, 25)
+
+            
+
+            cv2.putText(frame, text, position, font, fontsize, color=color)            
+                
+            ret,buffer=cv2.imencode('.jpg',frame)
+
+
+            if len(faces) != 0 and flag:
+                #store the image as a jpeg
+
+                with open(os.path.join(store, f"{datetime.datetime.now()}.jpg"), "wb") as f:
+                    f.write(buffer)
+
+                return None
+
+            frame=buffer.tobytes()
+
+            
+
+
+        yield(b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+################################################################################################
+
 ################################################################################################
 #                                          Functions                                           #
 #######################################################################################Functions
@@ -348,6 +597,62 @@ def home():
                            menu = Markup(menu(connected)),
                            buttons = Markup(buttons(connected, username)),
                            message = message)
+################################################################################################
+
+######################################################################################photo page
+@app.route('/photomatic', methods = ['GET', 'POST'])
+def photomatic():
+
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    if request.method == 'POST':
+        return render_template('redirect.html')
+        
+    return render_template('photomatic.html', 
+                           Connected = username, 
+                           menu = Markup(menu(connected)),
+                           src = Markup("""<img src="{{ url_for('video_feed') }}" width="100%"/>"""))
+################################################################################################
+
+###################################################################################redirect page
+@app.route('/picture')
+def picture():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    generate_frames(True)
+    return render_template('redirect2.html')
+################################################################################################
+
+###################################################################################redirect page
+@app.route('/redirect')
+def redirect():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    return render_template('redirect3.html')
 ################################################################################################
 
 ######################################################################################Admin page
@@ -550,7 +855,59 @@ def logout():
 
 
 
-#################################################################################@@@@@###app run
+#########################################################################################app run
+#                                       app response                                           #
+################################################################################################
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(),mimetype='multipart/x-mixed-replace; boundary=frame')
+################################################################################################
+@app.route('/video_feed2')
+def video_feed2():
+    return Response(generate_frames(flag = True),mimetype='multipart/x-mixed-replace; boundary=frame')
+################################################################################################
+#                                        app response                                          #
+########################################################################################app page
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################################################app run
 #                                            app run                                           #
 ################################################################################################
 serve(app, host="0.0.0.0", port=8080)
