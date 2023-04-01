@@ -4,6 +4,7 @@
 from flask import Flask, render_template, request, Markup, url_for, session, Response, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from werkzeug.local import LocalProxy
 from waitress import serve
 import pickle
 import os
@@ -23,9 +24,12 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 import ssl
+import base64
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
+
+
 
 
 
@@ -507,9 +511,10 @@ def generate_frames(flag : bool = False) -> any or None:
 
             if len(faces) != 0 and flag:
                 #store the image as a jpeg
+                image_to_string = base64.b64encode(buffer)
 
-                with open(os.path.join(store, f"{datetime.datetime.now()}.jpg"), "wb") as f:
-                    f.write(buffer)
+                #store the image in the database
+
 
                 return None
 
@@ -571,6 +576,33 @@ def send_mail_new_match(owner_mail : str, owner_name : str, stadium : str, image
     It's time to reunite the team,
     Capshoters, assemble !"""
     send_mail(owner_mail, subject, body, image_path)
+################################################################################################
+
+################################################################################################
+def imagefile_to_textfile(image_file_path : str, text_file_path : str) -> None:
+    with open(image_file_path, 'rb') as image_file:
+        image_bytes = image_file.read()
+        base64_bytes = base64.b64encode(image_bytes)
+        base64_string = base64_bytes.decode('utf-8')
+    with open(text_file_path, 'w') as text_file:
+        text_file.write(base64_string)
+################################################################################################
+
+################################################################################################
+def imagefile_to_string(image_file_path : str) -> str:
+    with open(image_file_path, 'rb') as image_file:
+        image_bytes = image_file.read()
+        base64_bytes = base64.b64encode(image_bytes)
+        base64_string = base64_bytes.decode('utf-8')
+    return base64_string
+################################################################################################
+
+################################################################################################
+def string_to_imagefile(data : str, image_file_path : str) -> None:
+    data = data.encode('utf-8')
+    data = base64.b64decode(data)
+    with open(image_file_path, 'wb') as image_file:
+        image_file.write(data)
 ################################################################################################
 #                                          Functions                                           #
 #######################################################################################Functions
