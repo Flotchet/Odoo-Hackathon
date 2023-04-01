@@ -10,7 +10,6 @@ import os
 import pandas as pd
 import datetime
 import os
-import pandas
 import secrets
 import hashlib
 import time
@@ -18,9 +17,16 @@ import cv2
 from itertools import cycle
 import psycopg2
 from psycopg2.extras import DictCursor, DictRow
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+import ssl
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
+
 
 
 
@@ -206,6 +212,7 @@ class Match(TableManipulation):
 
 
 
+
 ######################################################################################app config
 #                                          app config                                          #
 ################################################################################################
@@ -232,11 +239,6 @@ db = SQLAlchemy(app)
 ################################################################################################
 #                                          app config                                          #
 ######################################################################################app config
-
-
-
-
-
 
 
 
@@ -520,13 +522,58 @@ def generate_frames(flag : bool = False) -> any or None:
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 ################################################################################################
 
+###############################################################################################
+def send_mail(owner_mail : str, subject : str, body : str, image_path : str) -> None:
+    email_sender = 'Capshot.noreply@gmail.com'
+    smtp_password = 'spztwywgatukgtse'
+    message = MIMEMultipart()
+    message["Subject"] = subject
+    content = MIMEText(body)
+    message.attach(content)
+    
+    with open(image_path, "rb") as attachment :
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment', filename='capsule.png')
+        message.attach(part)
+        
+    text = message.as_string()
+    context = ssl.create_default_context()
+    
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, smtp_password)
+            smtp.sendmail(email_sender, owner_mail, text)
+    except Exception as e:
+        print(e)
+################################################################################################
+
+###############################################################################################        
+def send_mail_rematch(owner_mail : str, owner_name: str, stadium : str, local_team_name : str, visitor_team_name : str, image_path : str) -> None:
+    subject = "HEY! IT'S MEMORY TIME!"
+    body = f"""Hello, {owner_name}!
+    Do you remember that time when you used this strange photomaton at the {stadium} for the match {local_team_name} vs {visitor_team_name} ?
+    Maybe you don't remember but we do !
+    The same teams are once again facing each others and we would be thrilled to see you there again !
+    It's time to reunite the team,
+    Capshoters, assemble !"""
+    send_mail(owner_mail, subject, body, image_path)
+################################################################################################
+
+################################################################################################   
+def send_mail_new_match(owner_mail : str, owner_name : str, stadium : str, image_path : str):
+    subject = "HEY! TIME TO CREATE NEW MEMORIES!"
+    body = f"""Hello, {owner_name}!
+    Do you remember that time you used this strange photomaton at the {stadium} ?
+    Maybe you don't remember but we do !
+    It's been a while since you created new memories and a new match his happening soon!
+    It's time to reunite the team,
+    Capshoters, assemble !"""
+    send_mail(owner_mail, subject, body, image_path)
 ################################################################################################
 #                                          Functions                                           #
 #######################################################################################Functions
-
-
-
-
 
 
 
@@ -851,10 +898,6 @@ def logout():
 
 
 
-
-
-
-
 #########################################################################################app run
 #                                       app response                                           #
 ################################################################################################
@@ -868,10 +911,6 @@ def video_feed2():
 ################################################################################################
 #                                        app response                                          #
 ########################################################################################app page
-
-
-
-
 
 
 
