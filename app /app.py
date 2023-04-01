@@ -6,7 +6,6 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 from werkzeug.local import LocalProxy
 from waitress import serve
-import pickle
 import os
 import pandas as pd
 import datetime
@@ -61,15 +60,11 @@ import base64
 
 
 
-
-
-
-
 #########################################################################################classes
 #                                          Classes                                            #
 ################################################################################################
 class TableManipulation():
-    def __init__(self, host : str, port : str, database : str, user : str, password : str ) -> None:
+    def __init__(self, host : str = "dpg-cgjnntkeoogkndn4jki0-a.frankfurt-postgres.render.com", port : str = "5432", database : str = "odoohackaton", user : str = "odoohackaton_user" , password : str = "Gu97Sq2nZazmCuCoj5VR2CzWmiv5V9oq") -> None:
         try:
             self.con = psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
             self.cursor = self.con.cursor(cursor_factory=DictCursor)
@@ -514,6 +509,8 @@ def generate_frames(flag : bool = False) -> any or None:
                 image_to_string = base64.b64encode(buffer)
 
                 #store the image in the database
+                caps = Capsule()
+                caps.add_entry(999, image_to_string, 50, 1)
 
 
                 return None
@@ -982,7 +979,7 @@ def video_feed2():
 #                                            app run                                           #
 ################################################################################################
 serve(app, host="0.0.0.0", port=8080)
-app.run(debug=False)
+app.run(debug=False) 
 ################################################################################################
 #                                            app run                                           #
 #########################################################################################app run

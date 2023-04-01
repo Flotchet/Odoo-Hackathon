@@ -1,0 +1,214 @@
+<!DOCTYPE HTML>
+<!--
+	Solid State by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+
+<!-- template
+Connected
+menu
+wrong -->
+<html>
+	<head>
+		<title>Admin Panel</title>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Page Wrapper -->
+			<div id="page-wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1><a href="{{url_for('home')}}">CAPSHOT</a></h1>
+						<nav>							
+							<a href="#menu" class="icon brands fa-github">{{Connected}}</a>
+						</nav>
+					</header>
+
+				<!-- Menu -->
+					<nav id="menu">
+						<div class="inner">
+							<h2>{{Connected}}</h2>
+							<ul class="links">
+								{{menu}}
+							</ul>
+							<a href="#" class="close">Close</a>
+						</div>
+					</nav>
+
+				<!-- Wrapper -->
+					<section id="wrapper">
+						<header>
+							<div class="inner">
+								<h2><a href="#" class="icon solid fa-chess-queen"></a>CAPSHOT</h2>
+								<h3>Admin panel</h3>
+							</div>
+						</header>
+
+						<!-- Content -->
+							<div class="wrapper">
+								<div class="inner">
+									<!-- Form -->
+								<section>
+									<h3>Add some user to db</h3>
+									
+									<form method="post" >
+	
+										<div class="row gtr-uniform">
+
+											<div class="col-6 col-12-xsmall">
+												<input type="text" name="username" id="username" value="" placeholder="client number or username" requiered/>
+											</div>
+											
+											<div class="col-6 col-12-xsmall">
+												<input type="password"  name="password" id="password" value="" placeholder="password" requiered/>
+											</div>
+
+											<div class="col-6 col-12-xsmall">
+												<br>
+											</div>
+
+											<div class="col-6 col-12-xsmall">
+												<input type="password"  name="password2" id="password2" value="" placeholder="Reenter your password" requiered/>
+											</div>
+
+											
+											
+											<div class="col-12">
+												<select name="attr_level" id="attr_level" requiered>
+													<option value="">- privilege -</option>
+													<option value="Admin">Admin</option>
+													  <option value="Employee">Employee</option>
+													  <option value="User">User</option>
+												</select>
+											</div>
+
+										
+	
+											<div class="col-12">
+												<ul class="actions">
+													<li><input type="submit" value="Add user"/></li>
+													<li><input type="reset" value="Reset" /></li>
+												</ul>
+											</div>
+											
+										</div>
+									</form>
+								</section>
+	
+								<section>
+									<h2>{{wrong}}</h2>
+								</section>
+
+								<section>
+									<br>
+								</section>
+							</div>
+						</div>
+							
+					</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				<!-- Footer -->
+				<section id="footer">
+					<div class="inner">
+						<div class="row gtr-uniform">
+							<div class="col-12 col-12-small">
+								<h2>Our team</h2>
+							</div>
+
+							<div class="col-6 col-12-small">
+								<h3>Verwimp Cyril</h3>
+								<dl class="alt">
+									<dt>Title:</dt>
+									<dd>Data engineer - Software developer</dd>
+									<dd>
+										<ul class="icons">
+											<li><a href="https://www.linkedin.com/in/cyril-verwimp-8a0457208/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+											<li><a href="https://github.com/chipsi44" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+										</ul>
+									</dd>
+								</dl>						
+							</div>
+
+							<div class="col-6 col-12-small">
+								<h3>Maisse Florent</h3>
+								<dl class="alt">
+									<dt>Title:</dt>
+									<dd>Data scientist - Software developer</dd>
+									<dd>
+										<ul class="icons">
+											<li><a href="https://fm-personal-website.onrender.com/" class="icon solid fa-globe alt"><span class="label">Personal website</span></a></li>
+											<li><a href="https://www.linkedin.com/in/florentmaisse/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+											<li><a href="https://github.com/Flotchet" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+										</ul>
+									</dd>
+								</dl>						
+							</div>
+	
+							<div class="col-6 col-12-small">
+								<h3>Embel Anil</h3>
+								<dl class="alt">
+									<dt>Title:</dt>
+									<dd>Data analyst</dd>
+									<dd>
+										<ul class="icons">
+											<li><a href="https://linkedin.com/in/anilfurkanembel" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+											<li><a href="https://github.com/anilembel" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+										</ul>
+									</dd>
+								</dl>						
+							</div>
+
+							<div class="col-6 col-12-small">
+								<h3>Gilet Andy</h3>
+								<dl class="alt">
+									<dt>Title:</dt>
+									<dd>Software developer - .Net developer - Data engineer</dd>
+									<dd>
+										<ul class="icons">
+											<li><a href="https://www.linkedin.com/in/andy-gilet/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+											<li><a href="https://github.com/andygilet" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+										</ul>
+									</dd>
+								</dl>						
+							</div>
+						</div>
+					</div>
+					
+				</section>
+				
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
