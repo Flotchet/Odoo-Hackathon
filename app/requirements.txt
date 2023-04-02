@@ -3,3 +3,7 @@ flask_sqlalchemy==3.0.3
 pandas==1.5.2
 waitress==2.1.2
 hashlib
+opencv-python
+psycopg2
+email
+ssl
