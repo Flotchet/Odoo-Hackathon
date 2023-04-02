@@ -721,7 +721,7 @@ def home():
 
     except: 
 
-        session['connected'] : int = 3
+        session['connected'] : int = 0
         session['username'] : str = "Not connected"
         connected = session['connected'] 
         username = session['username']
