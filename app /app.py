@@ -22,6 +22,7 @@ from email.mime.text import MIMEText
 from email import encoders
 import ssl
 import base64
+from time import sleep
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
@@ -288,7 +289,7 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-        <li><a href="{url_for('photomatic')}">photomatic</a></li>
+        <li><a href="{url_for('photomatic')}">Photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -296,9 +297,9 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-		<li><a href="{url_for('admin')}">Admin panel</a></li>
         <li><a href="{url_for('add_match')}">Match panel</a></li>
-        <li><a href="{url_for('photomatic')}">photomatic</a></li>
+        <li><a href="{url_for('photomatic')}">Photomatic</a></li>
+        <li><a href="{url_for('caroussel')}">Caroussel</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -308,7 +309,8 @@ def menu(level : int) -> str :
         <li><a href="{url_for('home')}">Home</a></li>
 		<li><a href="{url_for('admin')}">Admin panel</a></li>
         <li><a href="{url_for('add_match')}">Match panel</a></li>
-        <li><a href="{url_for('photomatic')}">photomatic</a></li>
+        <li><a href="{url_for('photomatic')}">Photomatic</a></li>
+        <li><a href="{url_for('caroussel')}">Caroussel</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
 
@@ -401,7 +403,7 @@ def buttons(level : int, username : str) -> str:
 		</ul>  
 
         <ul class="actions fit">
-			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
+            <li><a href="{url_for('caroussel')}" class="button fit icon solid fa-redo-alt">Caroussel</a></li>
             <li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
 		</ul>    
         </section>
@@ -422,8 +424,12 @@ def buttons(level : int, username : str) -> str:
         
         <ul class="actions fit">
 			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
+            <li><a href="{url_for('caroussel')}" class="button fit icon solid fa-redo-alt">Caroussel</a></li>
+		</ul>
+
+        <ul class="actions fit">
             <li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
-		</ul>       
+		</ul>        
         </section>
 
         """
@@ -569,6 +575,28 @@ def generate_frames(flag : bool = False) -> any or None:
 
 
         yield(b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+################################################################################################
+
+##########################################################################Face detector function
+def generate_caroussel(slp : int = 120) -> any or None:
+    folder = os.path.join(basedir, 'images')
+    for _ in cycle([True]):
+        ## iterate over the images in the folder
+        for filename in os.listdir(folder):
+            if filename.endswith(".jpg"):
+                image_path = os.path.join(folder, filename)
+                #read the image
+                image = cv2.imread(image_path)
+                #convert the image to jpeg
+                ret,buffer=cv2.imencode('.jpg',image)
+                frame=buffer.tobytes()
+                sleep(slp)
+
+            
+
+
+            yield(b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 ################################################################################################
 
@@ -744,6 +772,29 @@ def photomatic():
                            Connected = username, 
                            menu = Markup(menu(connected)),
                            src = Markup("""<img src="{{ url_for('video_feed') }}" width="100%"/>"""))
+################################################################################################
+
+######################################################################################photo page
+@app.route('/caroussel', methods = ['GET', 'POST'])
+def caroussel():
+
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    if request.method == 'POST':
+        pass
+        
+    return render_template('caroussel.html', 
+                           Connected = username, 
+                           menu = Markup(menu(connected)),
+                           content = Markup("""<img src="{{ url_for('caroussel_feed') }}" width="100%"/>"""))
 ################################################################################################
 
 ###################################################################################redirect page
@@ -1017,6 +1068,10 @@ def video_feed():
 @app.route('/video_feed2')
 def video_feed2():
     return Response(generate_frames(flag = True),mimetype='multipart/x-mixed-replace; boundary=frame')
+################################################################################################
+@app.route('/caroussel_feed')
+def caroussel_feed():
+    return Response(generate_caroussel(slp = 1),mimetype='multipart/x-mixed-replace; boundary=frame')
 ################################################################################################
 #                                        app response                                          #
 ########################################################################################app page
