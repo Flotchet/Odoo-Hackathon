@@ -46,7 +46,7 @@ wrong -->
 					<section id="wrapper">
 						<header>
 							<div class="inner">
-								<h2><a href="#" class="icon solid fa-chess-queen"></a>CAPSHOT</h2>
+								<h2><a href="#" class="icon solid fa-user-friends"></a>CAPSHOT</h2>
 								<h3>Match panel</h3>
 							</div>
 						</header>
@@ -57,15 +57,23 @@ wrong -->
 									<!-- Form -->
                                     <!-- id : int, local_team : str, visitor_team : str, stadium : str, date : datetime = datetime.datetime.today()-->
 								<section>
-									<h3>Add some user to db</h3>
+									<h3>Add some match</h3>
 									
 									<form method="post" >
 	
 										<div class="row gtr-uniform">
 
 											<div class="col-6 col-12-xsmall">
-												<input type="text" name="username" id="username" value="" placeholder="client number or username" requiered/>
-											</div>
+                                                <input type="text" name="local" id="local" value="" placeholder="Local team" required />
+                                            </div>
+
+                                            <div class="col-6 col-12-xsmall">
+                                                <input type="text" name="visitor" id="visitor" value="" placeholder="Visitor team" required />
+                                            </div>
+
+                                            <div class="col-6 col-12-xsmall">
+                                                <input type="text" name="stadium" id="stadium" value="" placeholder="Stadium" required />
+                                            </div>
 											
 											<div class="col-6 col-12-xsmall">
 												<input type="date"  name="date" id="date" value="" requiered/>

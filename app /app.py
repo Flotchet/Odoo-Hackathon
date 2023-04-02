@@ -7,12 +7,10 @@ from sqlalchemy.sql import func
 from werkzeug.local import LocalProxy
 from waitress import serve
 import os
-import pandas as pd
 import datetime
 import os
 import secrets
 import hashlib
-import time
 import cv2
 from itertools import cycle
 import psycopg2
@@ -555,7 +553,12 @@ def generate_frames(flag : bool = False) -> any or None:
 
                 #store the image in the database
                 caps = Capsule()
-                caps.add_entry(999, image_to_string, 50, 1)
+                total = caps.get_all()
+
+                try:
+                    caps.add_entry(len(total) + 2, image_to_string, 50, 2)
+                except:
+                    pass
 
 
                 return None
@@ -878,13 +881,16 @@ def add_match():
     
     if request.method == 'POST':
 
+        match = Match()
+        total = match.get_all()
+
         
-        return render_template('add_match.html', 
-                               table = Markup(get_table_limited_matches()), 
-                               Connected = username, 
-                               menu = Markup(menu(connected)))
 
-
+        match.add_entry(len(total) + 2,
+                        request.form['local'],
+                        request.form['visitor'],
+                        request.form['stadium'],
+                        request.form['date'])
 
     return render_template('add_match.html',
                             table = Markup(get_table_limited_matches()),
