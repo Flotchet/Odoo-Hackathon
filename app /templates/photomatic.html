@@ -8,10 +8,10 @@
 <!-- template
 Connected
 menu
-wrong -->
+content -->
 <html>
 	<head>
-		<title>Admin Panel</title>
+		<title>photomatic</title>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -46,69 +46,44 @@ wrong -->
 					<section id="wrapper">
 						<header>
 							<div class="inner">
-								<h2><a href="#" class="icon solid fa-chess-queen"></a>CAPSHOT</h2>
-								<h3>Admin panel</h3>
+								<h2><a href="#" class="icon solid fa-camera"></a>Capshot</h2>
+								<h3>photomatic</h3>
 							</div>
 						</header>
 
 						<!-- Content -->
 							<div class="wrapper">
 								<div class="inner">
-									<!-- Form -->
-								<section>
-									<h3>Add some user to db</h3>
+									<!-- code-html-js -->
+									<img src="{{ url_for('video_feed') }}" width="100%"/>
+
 									
-									<form method="post" >
-	
-										<div class="row gtr-uniform">
 
-											<div class="col-6 col-12-xsmall">
-												<input type="text" name="username" id="username" value="" placeholder="client number or username" requiered/>
-											</div>
-											
-											<div class="col-6 col-12-xsmall">
-												<input type="password"  name="password" id="password" value="" placeholder="password" requiered/>
-											</div>
-
-											<div class="col-6 col-12-xsmall">
-												<br>
-											</div>
-
-											<div class="col-6 col-12-xsmall">
-												<input type="password"  name="password2" id="password2" value="" placeholder="Reenter your password" requiered/>
-											</div>
-
-											
-											
-											<div class="col-12">
-												<select name="attr_level" id="attr_level" requiered>
-													<option value="">- privilege -</option>
-													<option value="Admin">Admin</option>
-													  <option value="Employee">Employee</option>
-													  <option value="User">User</option>
-												</select>
-											</div>
+									
+									<section>
 
 										
-	
-											<div class="col-12">
-												<ul class="actions">
-													<li><input type="submit" value="Add user"/></li>
-													<li><input type="reset" value="Reset" /></li>
-												</ul>
-											</div>
+										<form method="post" >
+											<br>
+											<br>
+		
+											<div class="row gtr-uniform">
+												<div class="col-6 col-12-xsmall">
+													<input type="text" name="name" id="name" value="" placeholder="Enter your name" required />
+												</div>
+												<div class="col-6 col-12-xsmall">
+													<input type="email" name="mail" id="mail" value="" placeholder="Enter your mail" required />
+												</div>
 											
-										</div>
-									</form>
-								</section>
-	
-								<section>
-									<h2>{{wrong}}</h2>
-								</section>
-
-								<section>
-									<br>
-								</section>
+		
+												<div class="col-12">
+													<ul class="actions">
+														<li><input type="submit" value="Take picture" class="primary" /></li>
+													</ul>
+												</div>
+											</div>
+										</form>
+									</section>
 							</div>
 						</div>
 							

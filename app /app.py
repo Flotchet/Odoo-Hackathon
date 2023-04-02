@@ -1,18 +1,27 @@
 #########################################################################################imports
 #                                           Imports                                            #
 ################################################################################################
-from flask import Flask, render_template, request, Markup, url_for, session
+from flask import Flask, render_template, request, Markup, url_for, session, Response, g
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from werkzeug.local import LocalProxy
 from waitress import serve
-import pickle
 import os
-import pandas as pd
 import datetime
 import os
-import pandas
 import secrets
 import hashlib
+import cv2
+from itertools import cycle
+import psycopg2
+from psycopg2.extras import DictCursor, DictRow
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+import ssl
+import base64
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
@@ -21,6 +30,151 @@ import hashlib
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################################################classes
+#                                          Classes                                            #
+################################################################################################
+class TableManipulation():
+    def __init__(self, host : str = "dpg-cgjnntkeoogkndn4jki0-a.frankfurt-postgres.render.com", port : str = "5432", database : str = "odoohackaton", user : str = "odoohackaton_user" , password : str = "Gu97Sq2nZazmCuCoj5VR2CzWmiv5V9oq") -> None:
+        try:
+            self.con = psycopg2.connect(host=host, port=port, database=database, user=user, password=password)
+            self.cursor = self.con.cursor(cursor_factory=DictCursor)
+        except Exception as e:
+            print(e)
+            
+    def close(self) -> None:
+        try:
+            if self.con:
+                self.cursor.close()
+                self.con.close()
+        except Exception as e:
+            print(e)
+################################################################################################    
+class Capsule(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM capsule;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM capsule WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, image_hash : str, match_id : int, owner_id : int, opened : bool = False) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO capsule (id, image_hash, match_id, owner_id, opened) VALUES (%s,%s,%s,%s,%s)''', [id, image_hash, match_id, owner_id, opened])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+################################################################################################            
+class Owner(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM owners;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM owners WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_owner_mail(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f"""SELECT mail FROM owners WHERE id = {id}""")
+            mail = self.cursor.fetchone()
+            return mail
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_owner_name(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f"""SELECT name FROM owners WHERE id = {id}""")
+            name = self.cursor.fetchone()
+            return name
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, name : str, mail : str) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO owners (id, name, mail) VALUES (%s,%s,%s)''', [id, name, mail])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+################################################################################################
+class Match(TableManipulation):        
+    def get_all(self) -> list[DictRow] or None:
+        try:
+            self.cursor.execute('''SELECT * FROM match;''')
+            data = self.cursor.fetchall()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_one(self, id : int) -> DictRow or None:
+        try:
+            self.cursor.execute(f'''SELECT * FROM match WHERE Id = {id}''')
+            data = self.cursor.fetchone()
+            return data
+        except Exception as e:
+            print(e)
+            return None
+    
+    def add_entry(self, id : int, local_team : str, visitor_team : str, stadium : str, date : datetime = datetime.datetime.today()) -> None:
+        try:
+            self.cursor.execute('''INSERT INTO match (id, date, local_team, visitor_team, stadium) VALUES (%s,%s,%s,%s,%s)''', [id, date, local_team,visitor_team, stadium])
+            self.con.commit()
+        except Exception as e:
+            print(e)
+#########################################################################################classes
+#                                          Classes                                            #
+################################################################################################
 
 
 
@@ -72,7 +226,7 @@ app.config['SQLALCHEMY_BINDS'] = {
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'csv'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', }
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
@@ -82,11 +236,6 @@ db = SQLAlchemy(app)
 ################################################################################################
 #                                          app config                                          #
 ######################################################################################app config
-
-
-
-
-
 
 
 
@@ -139,6 +288,7 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -146,7 +296,9 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-		<li><a href="{url_for('admin')}">admin panel</a></li>
+		<li><a href="{url_for('admin')}">Admin panel</a></li>
+        <li><a href="{url_for('add_match')}">Match panel</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
     
@@ -154,11 +306,54 @@ def menu(level : int) -> str :
 
         return f"""
         <li><a href="{url_for('home')}">Home</a></li>
-		<li><a href="{url_for('admin')}">admin panel</a></li>
+		<li><a href="{url_for('admin')}">Admin panel</a></li>
+        <li><a href="{url_for('add_match')}">Match panel</a></li>
+        <li><a href="{url_for('photomatic')}">photomatic</a></li>
         <li><a href="{url_for('logout')}">Log out</a></li>      
         """
 
     return "Error attribution level"
+################################################################################################
+
+#########################################################@#########################Matches table
+def get_table_limited_matches() -> str:
+    """make an html table from the data of a company"""
+
+    match_db = Match()
+    matches = match_db.get_all()
+    #sort them by invert date
+    matches.sort(key=lambda x: x[1], reverse=True)
+
+    #make the table
+    table = """
+    <table class="alt">
+    <tr>
+        <th>ID</th>
+        <th>Date</th>
+        <th>Local</th>
+        <th>Visitor</th>
+        <th>Stadium</th>
+    </tr>
+    """
+    for enumarate, row in enumerate(matches):
+        if enumarate == 100:
+            break
+        table+=f"""
+        <tr>
+        """
+        for col in row:
+            table += f"""
+            <td>{col}</td>
+            """
+        table += """
+        </tr>
+        """
+
+    table += """
+    </table>
+    """
+
+    return table
 ################################################################################################
 
 ############################################################################home pages functions
@@ -184,9 +379,9 @@ def buttons(level : int, username : str) -> str:
 
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
-
-
+ 
 		<ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
 			<li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
 		</ul>       
         </section>
@@ -200,6 +395,10 @@ def buttons(level : int, username : str) -> str:
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
 
+        <ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+            <li><a href="{url_for('add_match')}" class="button fit icon solid fa-user-friends">Matches Panel</a></li>
+		</ul>  
 
         <ul class="actions fit">
 			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
@@ -216,6 +415,11 @@ def buttons(level : int, username : str) -> str:
         <section>
         <h3 class="major">Where do you want to go {username}?</h3>
 
+        <ul class="actions fit">
+            <li><a href="{url_for('photomatic')}" class="button fit icon solid fa-camera">photomatic</a></li>
+            <li><a href="{url_for('add_match')}" class="button fit icon solid fa-user-friends">Matches Panel</a></li>
+		</ul>  
+        
         <ul class="actions fit">
 			<li><a href="{url_for('admin')}" class="button fit icon solid fa-chess-queen">Admin panel</a></li>
             <li><a href="{url_for('logout')}" class="button fit icon solid fa-user-slash">Logout</a></li>
@@ -272,12 +476,181 @@ def loginf(username : str, password : str) -> bool:
     
     return result[0][2]
 ################################################################################################
+
+########################################################################Camera detector function
+def cameras_detector() -> list[int] :
+
+    """Detects the number of cameras connected to the computer and their ids"""
+    # This is a generator that yields the number of cameras connected to the 
+    # computer and returns their ids
+
+    devices = os.listdir("/dev")
+    cameras_indices = [int(device[-1]) for device in devices 
+                      if (device.startswith("video") 
+                          and not(int(device[-1]) % 2))]
+
+    cameras_indices.sort()
+
+    return cameras_indices
+###############################################################################################
+
+##########################################################################Face detector function
+def face_detection_in_frame(frame : any) -> any:
+
+    """Detects faces in a frame"""
+    # This function detects faces in a frame
+
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 
+                                         "haarcascade_frontalface_default.xml")
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+
+    return faces
+################################################################################################
+
+##########################################################################Face detector function
+def generate_frames(flag : bool = False) -> any or None:
+    cams = cameras_detector()
+    camera = cv2.VideoCapture(cams[0])
+    store = os.path.join(basedir, 'images')
+    for _ in cycle([True]):
+        ## read the camera frame
+        success,frame=camera.read()
+        if not success:
+            break
+        else:
+            faces = face_detection_in_frame(frame)
+
+            if len(faces) == 0:
+                font = cv2.FONT_HERSHEY_DUPLEX
+                color = (0, 0, 255) 
+                fontsize = 2/3
+                text = "No face detected"
+                position = (25, 50)
+
+                cv2.putText(frame, text, position, font, fontsize, color=color)
+
+            for (x, y, w, h) in faces:
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+
+            font = cv2.FONT_HERSHEY_DUPLEX
+            color = (255, 255, 255) 
+            fontsize = 2/3
+            time = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            text = f"whatfeur vs world - {time}"
+            position = (25, 25)
+
+            
+
+            cv2.putText(frame, text, position, font, fontsize, color=color)            
+                
+            ret,buffer=cv2.imencode('.jpg',frame)
+
+
+            if len(faces) != 0 and flag:
+                #store the image as a jpeg
+                image_to_string = base64.b64encode(buffer)
+
+                #store the image in the database
+                caps = Capsule()
+                total = caps.get_all()
+
+                try:
+                    caps.add_entry(len(total) + 2, image_to_string, 50, 2)
+                except:
+                    pass
+
+
+                return None
+
+            frame=buffer.tobytes()
+
+            
+
+
+        yield(b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+################################################################################################
+
+###############################################################################################
+def send_mail(owner_mail : str, subject : str, body : str, image_path : str) -> None:
+    email_sender = 'Capshot.noreply@gmail.com'
+    smtp_password = 'spztwywgatukgtse'
+    message = MIMEMultipart()
+    message["Subject"] = subject
+    content = MIMEText(body)
+    message.attach(content)
+    
+    with open(image_path, "rb") as attachment :
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment', filename='capsule.png')
+        message.attach(part)
+        
+    text = message.as_string()
+    context = ssl.create_default_context()
+    
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context) as smtp:
+            smtp.login(email_sender, smtp_password)
+            smtp.sendmail(email_sender, owner_mail, text)
+    except Exception as e:
+        print(e)
+################################################################################################
+
+###############################################################################################        
+def send_mail_rematch(owner_mail : str, owner_name: str, stadium : str, local_team_name : str, visitor_team_name : str, image_path : str) -> None:
+    subject = "HEY! IT'S MEMORY TIME!"
+    body = f"""Hello, {owner_name}!
+    Do you remember that time when you used this strange photomaton at the {stadium} for the match {local_team_name} vs {visitor_team_name} ?
+    Maybe you don't remember but we do !
+    The same teams are once again facing each others and we would be thrilled to see you there again !
+    It's time to reunite the team,
+    Capshoters, assemble !"""
+    send_mail(owner_mail, subject, body, image_path)
+################################################################################################
+
+################################################################################################   
+def send_mail_new_match(owner_mail : str, owner_name : str, stadium : str, image_path : str):
+    subject = "HEY! TIME TO CREATE NEW MEMORIES!"
+    body = f"""Hello, {owner_name}!
+    Do you remember that time you used this strange photomaton at the {stadium} ?
+    Maybe you don't remember but we do !
+    It's been a while since you created new memories and a new match his happening soon!
+    It's time to reunite the team,
+    Capshoters, assemble !"""
+    send_mail(owner_mail, subject, body, image_path)
+################################################################################################
+
+################################################################################################
+def imagefile_to_textfile(image_file_path : str, text_file_path : str) -> None:
+    with open(image_file_path, 'rb') as image_file:
+        image_bytes = image_file.read()
+        base64_bytes = base64.b64encode(image_bytes)
+        base64_string = base64_bytes.decode('utf-8')
+    with open(text_file_path, 'w') as text_file:
+        text_file.write(base64_string)
+################################################################################################
+
+################################################################################################
+def imagefile_to_string(image_file_path : str) -> str:
+    with open(image_file_path, 'rb') as image_file:
+        image_bytes = image_file.read()
+        base64_bytes = base64.b64encode(image_bytes)
+        base64_string = base64_bytes.decode('utf-8')
+    return base64_string
+################################################################################################
+
+################################################################################################
+def string_to_imagefile(data : str, image_file_path : str) -> None:
+    data = data.encode('utf-8')
+    data = base64.b64decode(data)
+    with open(image_file_path, 'wb') as image_file:
+        image_file.write(data)
+################################################################################################
 #                                          Functions                                           #
 #######################################################################################Functions
-
-
-
-
 
 
 
@@ -348,6 +721,62 @@ def home():
                            menu = Markup(menu(connected)),
                            buttons = Markup(buttons(connected, username)),
                            message = message)
+################################################################################################
+
+######################################################################################photo page
+@app.route('/photomatic', methods = ['GET', 'POST'])
+def photomatic():
+
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    if request.method == 'POST':
+        return render_template('redirect.html')
+        
+    return render_template('photomatic.html', 
+                           Connected = username, 
+                           menu = Markup(menu(connected)),
+                           src = Markup("""<img src="{{ url_for('video_feed') }}" width="100%"/>"""))
+################################################################################################
+
+###################################################################################redirect page
+@app.route('/picture')
+def picture():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    generate_frames(True)
+    return render_template('redirect2.html')
+################################################################################################
+
+###################################################################################redirect page
+@app.route('/redirect')
+def redirect():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 1:
+         return home()
+    
+    return render_template('redirect3.html')
 ################################################################################################
 
 ######################################################################################Admin page
@@ -435,6 +864,38 @@ def login():
                             Connected = username, 
                             menu = Markup(menu(connected)),
                             wrong = "")
+################################################################################################
+
+######################################################################################Admin page
+@app.route('/add_match', methods = ['GET', 'POST'])
+def add_match():
+    try:
+        connected = session['connected'] 
+        username = session['username']
+    except:
+        return home()
+
+    #if you are not connected & at least an admin
+    if connected < 3:
+         return home()
+    
+    if request.method == 'POST':
+
+        match = Match()
+        total = match.get_all()
+
+        
+
+        match.add_entry(len(total) + 2,
+                        request.form['local'],
+                        request.form['visitor'],
+                        request.form['stadium'],
+                        request.form['date'])
+
+    return render_template('add_match.html',
+                            table = Markup(get_table_limited_matches()),
+                            Connected = username, 
+                            menu = Markup(menu(connected)))
 ################################################################################################
 
 ####################################################################################Sign up page
@@ -546,15 +1007,59 @@ def logout():
 
 
 
+#########################################################################################app run
+#                                       app response                                           #
+################################################################################################
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(),mimetype='multipart/x-mixed-replace; boundary=frame')
+################################################################################################
+@app.route('/video_feed2')
+def video_feed2():
+    return Response(generate_frames(flag = True),mimetype='multipart/x-mixed-replace; boundary=frame')
+################################################################################################
+#                                        app response                                          #
+########################################################################################app page
 
 
 
 
-#################################################################################@@@@@###app run
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################################################app run
 #                                            app run                                           #
 ################################################################################################
 serve(app, host="0.0.0.0", port=8080)
-app.run(debug=False)
+app.run(debug=False) 
 ################################################################################################
 #                                            app run                                           #
 #########################################################################################app run

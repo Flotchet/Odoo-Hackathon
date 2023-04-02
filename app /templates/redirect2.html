@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Temporary Page</title>
+</head>
+<body>
+    <div id="redirect-url" data-url="{{ url_for('redirect') }}" style="display: none;"></div>
+	<img src="{{ url_for('video_feed2') }}" width="0%"/>
+	<script>
+		// Redirect to the final page after 5 seconds
+		setTimeout(function() {
+			window.location.href = document.getElementById('redirect-url').getAttribute('data-url');
+		}, 300);
+	</script>
+</body>
+</html>
