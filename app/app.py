@@ -23,6 +23,7 @@ from email import encoders
 import ssl
 import base64
 from time import sleep
+from pathlib import Path
 ################################################################################################
 #                                           Imports                                            #
 ################################################################################################
@@ -584,20 +585,13 @@ def generate_caroussel(slp : int = 120) -> any or None:
     for _ in cycle([True]):
         ## iterate over the images in the folder
         for filename in os.listdir(folder):
-            if filename.endswith(".jpg"):
-                image_path = os.path.join(folder, filename)
-                #read the image
-                image = cv2.imread(image_path)
-                #convert the image to jpeg
-                ret,buffer=cv2.imencode('.jpg',image)
-                frame=buffer.tobytes()
-                sleep(slp)
-
             
-
-
-            yield(b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            print(filename)
+            filepath = os.path.join(folder, filename)
+            img = cv2.imgread(filepath)
+            yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(img) + b'\r\n')
+            sleep(slp)
+                
 ################################################################################################
 
 ###############################################################################################
@@ -1114,7 +1108,7 @@ def caroussel_feed():
 #                                            app run                                           #
 ################################################################################################
 serve(app, host="0.0.0.0", port=8080)
-app.run(debug=False) 
+app.run(debug=False, threaded = True, use_reloader = False) 
 ################################################################################################
 #                                            app run                                           #
 #########################################################################################app run
